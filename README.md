@@ -10,17 +10,23 @@ Para compilar e executar este projeto, você precisará ter instalado em sua má
 * **Maven** (versão 3.6 ou superior)
 
 ## Como Compilar
+A compilação e a geração do arquivo executável (`.jar`) são feitas pelo Maven.
+
 1. Abra o terminal.
 2. Navegue até a pasta raiz do projeto (onde se encontra o arquivo `pom.xml`).
-3. Execute o comando abaixo para limpar builds anteriores, gerar as classes do ANTLR e compilar o código Java:
+3. Execute o comando abaixo para limpar builds anteriores, gerar as classes do ANTLR e empacotar o compilador:
 
-`mvn clean compile`
+`mvn clean package`
+
+Após o sucesso deste comando, um arquivo chamado `Trabalho-Compiladores-1.0-SNAPSHOT-jar-with-dependencies.jar` será gerado dentro da pasta `target/`.
 
 ## Como Executar
 O programa requer obrigatoriamente dois argumentos passados via linha de comando:
 1. O caminho completo para o arquivo de texto com o código-fonte de entrada.
 2. O caminho completo para o arquivo de texto onde a saída (tokens ou erros) será salva.
 
-Para executar utilizando o Maven, utilize o comando abaixo, substituindo os caminhos pelos diretórios reais da sua máquina:
+Para executar o analisador, utilize o comando abaixo:
 
-`mvn exec:java -Dexec.mainClass="br.ufscar.dc.compiladores.la.Principal" -Dexec.args="C:\caminho\para\entrada.txt C:\caminho\para\saida.txt"`
+`java -jar target/Trabalho-Compiladores-1.0-SNAPSHOT-jar-with-dependencies.jar entrada.txt saida.txt`
+
+*(Nota: Substitua `entrada.txt` e `saida.txt` pelos caminhos dos arquivos na sua máquina).*

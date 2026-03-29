@@ -1,7 +1,9 @@
+package br.ufscar.dc.compiladores.la;
 import org.antlr.v4.runtime.*;
 import java.io.BufferedWriter;
 import java.io.FileWriter;
 import java.io.IOException;
+
 
 public class Principal {
 
@@ -37,19 +39,19 @@ public class Principal {
             // =============================
 
             if (tipo.equals("ERRO")) {
-                writer.write("Linha " + token.getLine() + ": " + texto + " - simbolo nao identificado");
+                writer.write("Linha " + token.getLine() + ": " + texto + " - simbolo nao identificado\n");
                 writer.close();
                 return;
             }
 
             if (tipo.equals("CADEIA_NAO_FECHADA")) {
-                writer.write("Linha " + token.getLine() + ": cadeia literal nao fechada");
+                writer.write("Linha " + token.getLine() + ": cadeia literal nao fechada\n");
                 writer.close();
                 return;
             }
 
             if (tipo.equals("COMENTARIO_NAO_FECHADO")) {
-                writer.write("Linha " + token.getLine() + ": comentario nao fechado");
+                writer.write("Linha " + token.getLine() + ": comentario nao fechado\n");
                 writer.close();
                 return;
             }

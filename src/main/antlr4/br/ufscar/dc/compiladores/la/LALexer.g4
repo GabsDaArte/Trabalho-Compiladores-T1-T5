@@ -51,11 +51,11 @@ ABREPAR: '(';
 FECHAPAR: ')';
 
 // Tratamento de Erros Léxicos
-// Procura chaves que não fecham na mesma linha
-COMENTARIO_NAO_FECHADO: '{' ~('\n'|'\r'|'}')* '\n';
+// Captura chaves que não fecham
+COMENTARIO_NAO_FECHADO: '{' ~('\r'|'\n'|'}')* ('\r'? '\n' | EOF) ;
 
-// Procura aspas que não fecham na mesma linha
-CADEIA_NAO_FECHADA: '"' ~('\n'|'\r'|'"')* '\n';
+// Captura aspas que não fecham
+CADEIA_NAO_FECHADA: '"' ~('\r'|'\n'|'"')* ('\r'? '\n' | EOF) ;
 
 // Captura símbolos inválido (ex: ~ , @ , #)
 ERRO: .;
