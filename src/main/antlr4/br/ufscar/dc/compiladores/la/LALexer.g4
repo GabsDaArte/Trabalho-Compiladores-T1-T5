@@ -5,13 +5,17 @@ PALAVRA_CHAVE:
     'algoritmo' | 'declare' | 'literal' | 'inteiro' | 'leia' | 'escreva' | 'fim_algoritmo' |
 
     // Palavras chave para trabalhos futuros
-    'real' | 'logico' | 'se' | 'entao' | 'senao' | 'fim_se' |
+    'real' | 'logico' | 'se' |
+    'entao' | 'senao' | 'fim_se' |
     'enquanto' | 'faca' | 'fim_enquanto' |
     'para' | 'ate' | 'fim_para' |
-    'procedimento' | 'fim_procedimento' |
+    'procedimento' |
+    'fim_procedimento' |
     'funcao' | 'fim_funcao' | 'retorne' |
     'tipo' | 'registro' | 'fim_registro' |
-    'constante' | 'falso' | 'verdadeiro' | 'nao' | 'e' | 'ou' ;
+    'constante' | 'falso' | 'verdadeiro' |
+    'nao' | 'e' | 'ou' |
+    'caso' | 'seja' | 'fim_caso' | 'var' ;
 
 fragment
 // Dígito numérico
@@ -39,10 +43,10 @@ WS: (' '|'\t'|'\r'|'\n') { skip(); };
 OP_REL: '>' | '>=' | '<' | '<=' | '<>' | '=' ;
 
 // Operadores Aritméticos
-OP_ARIT: '+' | '-' | '*' | '/' ;
+OP_ARIT: '+' | '-' | '*' | '/' | '%' ;
 
 // Delimitadores
-DELIM: ':' | ',' | ';' | '.' ;
+DELIM: ':' | ',' | ';' | '..' | '.' | '[' | ']' | '^' | '&' | '<-' ;
 
 // Abre Parênteses
 ABREPAR: '(';
