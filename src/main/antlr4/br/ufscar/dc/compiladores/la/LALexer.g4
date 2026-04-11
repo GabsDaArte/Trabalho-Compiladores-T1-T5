@@ -22,10 +22,10 @@ fragment
 DIGITO: '0'..'9';
 
 // Números inteiros
-NUMINT: ('+'|'-')? DIGITO+;
+NUM_INT: DIGITO+;
 
 // Números reais
-NUMREAL: ('+'|'-')? DIGITO+ '.' DIGITO+;
+NUM_REAL: DIGITO+ '.' DIGITO+;
 
 // Variáveis
 IDENT: [a-zA-Z][a-zA-Z0-9_]*;
