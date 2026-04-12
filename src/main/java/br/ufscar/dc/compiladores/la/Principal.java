@@ -1,79 +1,48 @@
 package br.ufscar.dc.compiladores.la;
-import org.antlr.v4.runtime.*;
-import java.io.BufferedWriter;
-import java.io.FileWriter;
-import java.io.IOException;
 
+import org.antlr.v4.runtime.*;
+import java.io.*;
 
 public class Principal {
 
-    public static void main(String[] args) throws IOException {
+    public static void main(String[] args) throws Exception {
 
-        // Verifica se os argumentos foram passados corretamente
+        // Verifica argumentos
         if (args.length != 2) {
-            System.out.println("Uso: java -jar <jar> <arquivo_entrada> <arquivo_saida>");
+            System.out.println("Uso: java -jar <jar> <entrada> <saida>");
             return;
         }
 
         String arquivoEntrada = args[0];
         String arquivoSaida = args[1];
 
-        // Leitura do arquivo de entrada
-        CharStream cs = CharStreams.fromFileName(arquivoEntrada);
+        PrintWriter writer = new PrintWriter(arquivoSaida);
 
-        // Instancia o lexer gerado pelo ANTLR
-        LALexer lexer = new LALexer(cs);
+        try {
+            //leitura do arquivo
+            CharStream cs = CharStreams.fromFileName(arquivoEntrada);
 
-        // Escrita no arquivo de saída
-        BufferedWriter writer = new BufferedWriter(new FileWriter(arquivoSaida));
+            //Lexer
+            LALexer lexer = new LALexer(cs);
 
-        Token token;
+            //Token stream
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
 
-        while ((token = lexer.nextToken()).getType() != Token.EOF) {
+            //parser
+            LAParser parser = new LAParser(tokens);
 
-            String texto = token.getText();
-            String tipo = LALexer.VOCABULARY.getSymbolicName(token.getType());
+            //Remove listeners padrão
+            parser.removeErrorListeners();
 
-            // =============================
-            // TRATAMENTO DE ERROS
-            // =============================
+            //adiciona o seu listener customizado
+            parser.addErrorListener(new CustomErrorListener(writer));
 
-            if (tipo.equals("ERRO")) {
-                writer.write("Linha " + token.getLine() + ": " + texto + " - simbolo nao identificado\n");
-                writer.close();
-                return;
-            }
+            parser.programa();
 
-            if (tipo.equals("CADEIA_NAO_FECHADA")) {
-                writer.write("Linha " + token.getLine() + ": cadeia literal nao fechada\n");
-                writer.close();
-                return;
-            }
+            writer.println("Fim da compilacao");
 
-            if (tipo.equals("COMENTARIO_NAO_FECHADO")) {
-                writer.write("Linha " + token.getLine() + ": comentario nao fechado\n");
-                writer.close();
-                return;
-            }
+        } catch (Exception e) {
 
-            // =============================
-            // FORMATAÇÃO DA SAÍDA
-            // =============================
-
-            // Tokens que imprimem como <'texto','texto'>
-            if (tipo.equals("PALAVRA_CHAVE") ||
-                    tipo.equals("OP_REL") ||
-                    tipo.equals("OP_ARIT") ||
-                    tipo.equals("DELIM") ||
-                    tipo.equals("ABREPAR") ||
-                    tipo.equals("FECHAPAR")) {
-
-                writer.write("<'" + texto + "','" + texto + "'>\n");
-
-            } else {
-                // Tokens como IDENT, NUMINT, NUMREAL, CADEIA
-                writer.write("<'" + texto + "'," + tipo + ">\n");
-            }
         }
 
         writer.close();
