@@ -3,6 +3,7 @@ package br.ufscar.dc.compiladores.la;
 import org.antlr.v4.runtime.*;
 import java.io.*;
 
+
 public class Principal {
 
     public static void main(String[] args) throws Exception {
@@ -19,30 +20,44 @@ public class Principal {
         PrintWriter writer = new PrintWriter(arquivoSaida);
 
         try {
-            //leitura do arquivo
+            // leitura do arquivo
             CharStream cs = CharStreams.fromFileName(arquivoEntrada);
 
-            //Lexer
+            // Lexer
             LALexer lexer = new LALexer(cs);
 
-            //Token stream
+            // Token stream
             CommonTokenStream tokens = new CommonTokenStream(lexer);
 
-            //parser
+            // Parser
             LAParser parser = new LAParser(tokens);
 
-            //Remove listeners padrão
+            // Remove listeners padrão
             parser.removeErrorListeners();
 
-            //adiciona o seu listener customizado
-            parser.addErrorListener(new CustomErrorListener(writer));
+            // Listener customizado
+            CustomErrorListener listener = new CustomErrorListener(writer);
+            parser.addErrorListener(listener);
 
-            parser.programa();
+            // Parsing (gera árvore)
+            LAParser.ProgramaContext arvore = parser.programa();
+
+            // Só faz análise semântica se NÃO teve erro sintático
+            if (!listener.erroSintatico) {
+
+                AnalisadorSemantico semantico = new AnalisadorSemantico();
+                semantico.visit(arvore);
+
+                // imprime erros semânticos
+                for (String erro : semantico.getErros()) {
+                    writer.println(erro);
+                }
+            }
 
             writer.println("Fim da compilacao");
 
         } catch (Exception e) {
-
+            // pode deixar vazio como estava
         }
 
         writer.close();

@@ -1,0 +1,4 @@
+algoritmo
+declare x: logico
+x <- 10
+fim_algoritmo
