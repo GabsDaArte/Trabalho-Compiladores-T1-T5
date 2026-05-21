@@ -9,7 +9,10 @@ public class TabelaDeSimbolos {
         REAL,
         LITERAL,
         LOGICO,
-        PONTEIRO,
+        PONTEIRO_INTEIRO,
+        PONTEIRO_REAL,
+        PONTEIRO_LOGICO,
+        PONTEIRO_LITERAL,
         REGISTRO,
         INVALIDO
     }
