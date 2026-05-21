@@ -13,6 +13,8 @@ public class AnalisadorSemantico extends LAParserBaseVisitor<TabelaDeSimbolos.Ti
     TabelaDeSimbolos tabela = new TabelaDeSimbolos();
     List<String> erros = new ArrayList<>();
 
+    private boolean dentroFuncao = false;
+
     public List<String> getErros() {
         return erros;
     }
@@ -33,10 +35,10 @@ public class AnalisadorSemantico extends LAParserBaseVisitor<TabelaDeSimbolos.Ti
             String nome = idCtx.getText();
 
             // Evita a redeclaração da mesma variável no mesmo escopo
-            if (tabela.existe(nome)) {
+            if (tabela.existeNoEscopoAtual(nome)) {
                 erros.add("Linha " + idCtx.start.getLine() + ": identificador " + nome + " ja declarado anteriormente");
             } else {
-                tabela.adicionar(nome, tipo);
+                tabela.adicionar(nome, tipo, TabelaDeSimbolos.Categoria.VARIAVEL);
             }
         }
 
@@ -256,14 +258,274 @@ public class AnalisadorSemantico extends LAParserBaseVisitor<TabelaDeSimbolos.Ti
         return tipo;
     }
 
+    // ==========================================
+    // DECLARAÇÃO DE FUNÇÕES
+    // ==========================================
+
+    @Override
+    public TabelaDeSimbolos.TipoLA visitDeclaracao_global(
+            LAParser.Declaracao_globalContext ctx){
+
+        String nome = ctx.IDENT().getText();
+
+        // verifica duplicidade
+        if(tabela.existeNoEscopoAtual(nome)){
+
+            erros.add(
+                    "Linha " +
+                    ctx.start.getLine() +
+                    ": identificador " +
+                    nome +
+                    " ja declarado anteriormente"
+            );
+
+            return null;
+        }
+
+        // função ou procedimento
+        TabelaDeSimbolos.Categoria categoria;
+
+        
+
+        if(ctx.tipo_estendido()!=null){
+
+            categoria =
+                TabelaDeSimbolos.Categoria.FUNCAO;
+
+            dentroFuncao = true;
+        }
+
+        else{
+
+            categoria =
+                TabelaDeSimbolos.Categoria.PROCEDIMENTO;
+
+            dentroFuncao = false;
+        }
+
+
+
+        tabela.adicionar(
+                nome,
+                TabelaDeSimbolos.TipoLA.INVALIDO,
+                categoria
+        );
+
+        TabelaDeSimbolos.EntradaTabela entrada = tabela.getEntrada(nome);
+
+        // cria escopo interno
+        tabela.novoEscopo();
+
+        // visita parâmetros
+        if(ctx.parametros()!=null){
+
+            for(var parametro :
+                    ctx.parametros().parametro()){
+
+                TabelaDeSimbolos.TipoLA tipoParametro =
+                        getTipo(
+                                parametro.tipo_estendido()
+                                        .getText()
+                        );
+
+                for(var id :
+                        parametro.identificador()){
+
+                    entrada.parametros
+                            .add(tipoParametro);
+                }
+            }
+
+            visit(ctx.parametros());
+        }
+
+
+
+
+        // percorre comandos internos
+        visitChildren(ctx);
+
+        // sai do escopo
+        tabela.abandonarEscopo();
+
+        dentroFuncao=false;
+
+        return null;
+    }
+
+
+
+    // ==========================================
+    // PARÂMETROS
+    // ==========================================
+
+    @Override
+    public TabelaDeSimbolos.TipoLA visitParametro(
+            LAParser.ParametroContext ctx){
+
+        TabelaDeSimbolos.TipoLA tipo =
+                getTipo(
+                        ctx.tipo_estendido()
+                                .getText()
+                );
+
+        for(var id : ctx.identificador()){
+
+            String nome =
+                    id.getText();
+
+            if(tabela.existeNoEscopoAtual(nome)){
+
+                erros.add(
+                        "Linha "
+                        + id.start.getLine()
+                        + ": identificador "
+                        + nome
+                        + " ja declarado anteriormente"
+                );
+            }
+
+            else{
+
+                tabela.adicionar(
+                        nome,
+                        tipo,
+                        TabelaDeSimbolos.Categoria.VARIAVEL
+                );
+            }
+        }
+
+        return null;
+    }
+
+
+
+    @Override
+    public TabelaDeSimbolos.TipoLA visitParcela_unario(
+            LAParser.Parcela_unarioContext ctx){
+
+        // chamada função
+        if(ctx.IDENT()!=null &&
+        !ctx.expressao().isEmpty()){
+
+            String nome=
+                    ctx.IDENT().getText();
+
+            if(!tabela.existe(nome)){
+
+                erros.add(
+                    "Linha "
+                    +ctx.start.getLine()
+                    +": identificador "
+                    +nome
+                    +" nao declarado"
+                );
+
+                return TabelaDeSimbolos.TipoLA.INVALIDO;
+            }
+
+            TabelaDeSimbolos.EntradaTabela entrada=
+                    tabela.getEntrada(nome);
+
+            List<TabelaDeSimbolos.TipoLA> argumentos=
+                    new ArrayList<>();
+
+            for(var expr:ctx.expressao()){
+
+                argumentos.add(
+                        visit(expr)
+                );
+            }
+
+            if(argumentos.size()!=
+                    entrada.parametros.size()){
+
+                erros.add(
+                    "Linha "
+                    +ctx.start.getLine()
+                    +": incompatibilidade de parametros na chamada de "
+                    +nome
+                );
+
+                return TabelaDeSimbolos.TipoLA.INVALIDO;
+            }
+
+            for(int i=0;i<argumentos.size();i++){
+
+                if(argumentos.get(i)!=
+                        entrada.parametros.get(i)){
+
+                    erros.add(
+                        "Linha "
+                        +ctx.start.getLine()
+                        +": incompatibilidade de parametros na chamada de "
+                        +nome
+                    );
+
+                    return TabelaDeSimbolos.TipoLA.INVALIDO;
+                }
+            }
+
+            return entrada.tipo;
+        }
+
+        return super.visitParcela_unario(ctx);
+    }
+
+
+
+    @Override
+    public TabelaDeSimbolos.TipoLA visitCmdRetorne(
+            LAParser.CmdRetorneContext ctx){
+
+        if(!dentroFuncao){
+
+            erros.add(
+                    "Linha "
+                    + ctx.start.getLine()
+                    + ": comando retorne nao permitido nesse escopo"
+            );
+        }
+
+        return null;
+    }
+
+
+
+
+
     // MAPEAR TIPO
-    private TabelaDeSimbolos.TipoLA getTipo(String tipo) {
-        switch (tipo) {
-            case "inteiro": return TabelaDeSimbolos.TipoLA.INTEIRO;
-            case "real": return TabelaDeSimbolos.TipoLA.REAL;
-            case "literal": return TabelaDeSimbolos.TipoLA.LITERAL;
-            case "logico": return TabelaDeSimbolos.TipoLA.LOGICO;
-            default: return TabelaDeSimbolos.TipoLA.INVALIDO;
+    private TabelaDeSimbolos.TipoLA getTipo(String tipo){
+
+        switch(tipo){
+
+            case "inteiro":
+                return TabelaDeSimbolos.TipoLA.INTEIRO;
+
+            case "real":
+                return TabelaDeSimbolos.TipoLA.REAL;
+
+            case "literal":
+                return TabelaDeSimbolos.TipoLA.LITERAL;
+
+            case "logico":
+                return TabelaDeSimbolos.TipoLA.LOGICO;
+
+            case "^inteiro":
+            case "^real":
+            case "^literal":
+            case "^logico":
+                return TabelaDeSimbolos.TipoLA.PONTEIRO;
+
+            case "registro":
+                return TabelaDeSimbolos.TipoLA.REGISTRO;
+
+            default:
+                return TabelaDeSimbolos.TipoLA.INVALIDO;
         }
     }
+
+
+
+
 }
